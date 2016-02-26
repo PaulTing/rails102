@@ -2,19 +2,19 @@ class PostsController < ApplicationController
   before_action :authenticate_user!
   before_action :find_group
 
+  before_action :member_required, only: [:new, :create]
+
   def new
-    #@group = Group.find(params[:group_id])
     @post = @group.posts.new
   end
 
   def edit
-    #@group = Group.find(params[:group_id])
-    @post = @group.posts.find(params[:id])
+    @post = current_user.posts.find(params[:id])
   end
 
   def create
-    #@group = Group.find(params[:group_id])
     @post = @group.posts.build(post_params)
+    @post.author = current_user
 
     if @post.save
       redirect_to group_path(@group), notice: "新增文章成功！"
@@ -24,8 +24,7 @@ class PostsController < ApplicationController
   end
 
   def update
-    #@group = Group.find(params[:group_id])
-    @post = @group.posts.find(params[:id])
+    @post = current_user.posts.find(params[:id])
 
     if @post.update(post_params)
       redirect_to group_path(@group), notice: "文章修改成功"
@@ -35,8 +34,7 @@ class PostsController < ApplicationController
   end
 
   def destroy
-    #@group = Group.find(params[:group_id])
-    @post = @group.posts.find(params[:id])
+    @post = current_user.posts.find(params[:id])
 
     @post.destroy
     redirect_to group_path(@group), alert: "文章刪除"
@@ -50,6 +48,13 @@ class PostsController < ApplicationController
 
   def post_params
     params.require(:post).permit(:content)
+  end
+
+  def member_required
+    if !current_user.is_member_of?(@group)
+      flash[:warning] = "You aren't belong this group, you cann't post article"
+      redirect_to group_path(@group)
+    end
   end
 
 end
